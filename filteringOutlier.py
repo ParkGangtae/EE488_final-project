@@ -30,7 +30,7 @@ parser.add_argument('--nDataLoaderThread',  type=int, default=5, 	help='Number o
 
 ## Training details
 parser.add_argument('--test_interval',  type=int,   default=5,      help='Test and save every [test_interval] epochs')
-parser.add_argument('--max_epoch',      type=int,   default=10,    help='Maximum number of epochs')
+parser.add_argument('--max_epoch',      type=int,   default=15,    help='Maximum number of epochs')
 parser.add_argument('--trainfunc',      type=str,   default="softmax",  help='Loss function to use')
 
 ## Optimizer
@@ -187,7 +187,7 @@ def main_worker(args):
         loss = trainer.train_network(trainLoader)
         logger.info("Epoch {:04d} completed with TLOSS {:.5f}".format(ep,loss))
 
-        if ep % args.test_interval == 0:
+        if ep == 15:
 
             sorted_image_dict, embeddings, labels = sort_images_by_similarity(
                 args.train_path, 
@@ -201,14 +201,14 @@ def main_worker(args):
                 percentile=15
             )
             
-            with open(f"{args.save_path}/filtered_images_epoch_{ep}.txt", "w") as f:
+            with open(f"{args.save_path}/filtered_images.txt", "w") as f:
                 for class_idx, image_list in filtered_image_dict.items():
                     f.write(f"Class {class_idx}:\n")
                     for image_path in image_list:
                         f.write("./" + image_path + "\n")
                     f.write("\n")
             
-            logger.info(f"Filtered image list saved for epoch {ep} at {args.save_path}/filtered_images_epoch_{ep}.txt")
+            logger.info(f"Filtered image list saved for epoch {ep} at {args.save_path}/filtered_images.txt")
 
     
 

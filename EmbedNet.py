@@ -39,15 +39,6 @@ class EmbedNet(nn.Module):
             nloss = self.__C__.forward(outp,label)
             return nloss
 
-        # else:
-        #     # Triplet Loss에 필요한 anchor, positive, negative 생성
-        #     outp = outp.reshape(self.nPerClass, -1, outp.size()[-1]).transpose(1, 0)
-
-        #     # Anchor-Positive Pair만 전달 (negatives는 LossFunction 내부에서 처리)
-        #     outp = outp[:, :2, :]  # 첫 두 개는 anchor, positive
-        #     nloss = self.__C__.forward(outp, label)
-        #     return nloss
-
 class ModelTrainer(object):
 
     def __init__(self, embed_model, optimizer, scheduler, **kwargs):

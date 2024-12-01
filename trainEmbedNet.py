@@ -11,10 +11,14 @@ import glob
 import datetime
 import numpy
 import logging
+import random
 from EmbedNet import *
 from DatasetLoader import get_data_loader
 from sklearn import metrics
+from PIL import Image
 import torchvision.transforms as transforms
+
+sunglasses = Image.open("./data/sunglass.png").convert("RGBA")
 
 # ## ===== ===== ===== ===== ===== ===== ===== =====
 # ## Parse arguments
@@ -28,7 +32,7 @@ parser.add_argument('--max_img_per_cls',    type=int, default=500,	help='Maximum
 parser.add_argument('--nDataLoaderThread',  type=int, default=5, 	help='Number of data loader threads')
 
 ## Training details
-parser.add_argument('--test_interval',  type=int,   default=5,      help='Test and save every [test_interval] epochs')
+parser.add_argument('--test_interval',  type=int,   default=10,      help='Test and save every [test_interval] epochs')
 parser.add_argument('--max_epoch',      type=int,   default=50,    help='Maximum number of epochs')
 parser.add_argument('--trainfunc',      type=str,   default="softmax",  help='Loss function to use')
 
@@ -99,6 +103,10 @@ def filtering_outliers(train_dir, excluded_file, filtered_train_dir):
     with open(excluded_file, "r") as f:
         excluded_samples = set(line.strip() for line in f.readlines())
     
+    # 기존 filtered_train_dir 삭제
+    if os.path.exists(filtered_train_dir):
+        shutil.rmtree(filtered_train_dir)  # 기존 디렉토리 삭제
+
     # 새로운 디렉토리 생성
     if not os.path.exists(filtered_train_dir):
         os.makedirs(filtered_train_dir)
@@ -108,14 +116,30 @@ def filtering_outliers(train_dir, excluded_file, filtered_train_dir):
         for file in files:
             if file.endswith(".jpg"):  # 필요한 확장자만 복사
                 file_path = os.path.join(root, file)
-                print(file_path)
                 relative_path = os.path.relpath(file_path, train_dir)
-                print(relative_path)
                 if file_path not in excluded_samples:
                     new_file_path = os.path.join(filtered_train_dir, relative_path)
-                    print(new_file_path)
                     os.makedirs(os.path.dirname(new_file_path), exist_ok=True)
                     shutil.copy(file_path, new_file_path)
+
+## ===== ===== ===== ===== ===== ===== ===== =====
+## Face detect
+## ===== ===== ===== ===== ===== ===== ===== =====
+
+def add_sunglasses(image):
+    if random.random() < 0.20:
+        # 선글라스를 이미지에 덧붙이기 (이 예시에서는 간단한 위치와 크기로 조정)
+        width, height = image.size
+        glasses_width = int(width * 0.6)
+        glasses_height = int(height * 0.6)
+
+        # 선글라스 크기 조정
+        sunglasses_resized = sunglasses.resize((glasses_width, glasses_height))
+
+        # 선글라스를 이미지에 합성
+        image.paste(sunglasses_resized, (int(width * 0.2), int(height * 0.14)), sunglasses_resized)
+
+    return image
 
 ## ===== ===== ===== ===== ===== ===== ===== =====
 ## Trainer script
@@ -135,7 +159,7 @@ def main_worker(args):
         datefmt="%Y-%m-%d %H:%M:%S",
     )
 
-    filtered_dict = './data/outlier_dict/filtered_images_epoch_10.txt'
+    filtered_dict = './data/outlier_dict/filtered_images.txt'
     filtered_train_path = './data/ee488_24_data/filtered_train2'
 
     if args.filtering and args.train_path == './data/ee488_24_data/train2':
@@ -149,11 +173,16 @@ def main_worker(args):
     ep          = 1
 
     ## Input transformations for training (you can change if you like)
-    train_transform = transforms.Compose(
-        [transforms.ToTensor(),
-         transforms.Resize(256),
-         transforms.RandomCrop([224,224]),
-         transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
+    train_transform = transforms.Compose([
+        transforms.Resize(256),
+        transforms.CenterCrop([224,224]),
+        transforms.Lambda(lambda img: add_sunglasses(img)),
+        transforms.ToTensor(),
+        transforms.RandomHorizontalFlip(p=0.5),
+        transforms.RandomRotation(degrees=10),
+        transforms.ColorJitter(hue=0.5),
+        transforms.RandomGrayscale(p=0.5),
+        transforms.Normalize(mean=[0.485, 0.456, 0.406], std=[0.229, 0.224, 0.225])])
 
     ## Input transformations for evaluation (you can change if you like)
     test_transform = transforms.Compose(
