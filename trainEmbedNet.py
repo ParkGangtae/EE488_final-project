@@ -79,13 +79,8 @@ args = parser.parse_args()
 
 def compute_eer(all_labels,all_scores):
 
-    # compute receiver operating characteristic (ROC) for binary classification
     FPR, TPR, thresholds = metrics.roc_curve(all_labels, all_scores, pos_label=1)
-
-    # calculate false negative rate (FNR)
     FNR = 1 - TPR
-
-    # calculate equal error rate (EER). The EER is the error rate at which FNR is equal to FPR.
     EER_idx = numpy.nanargmin(numpy.absolute(FNR - FPR))
     EER = FPR[EER_idx]
     threshold = thresholds[EER_idx]
@@ -98,23 +93,20 @@ def compute_eer(all_labels,all_scores):
 
 def filtering_outliers(train_dir, excluded_file, filtered_train_dir):
 
-    # 제외할 이미지 파일 목록 읽기
     excluded_samples = set()
     with open(excluded_file, "r") as f:
         excluded_samples = set(line.strip() for line in f.readlines())
     
-    # 기존 filtered_train_dir 삭제
+    # delete remain files
     if os.path.exists(filtered_train_dir):
-        shutil.rmtree(filtered_train_dir)  # 기존 디렉토리 삭제
+        shutil.rmtree(filtered_train_dir)
 
-    # 새로운 디렉토리 생성
     if not os.path.exists(filtered_train_dir):
         os.makedirs(filtered_train_dir)
 
-    # 기존 데이터셋 복사 (제외된 이미지는 건너뜀)
     for root, dirs, files in os.walk(train_dir):
         for file in files:
-            if file.endswith(".jpg"):  # 필요한 확장자만 복사
+            if file.endswith(".jpg"):
                 file_path = os.path.join(root, file)
                 relative_path = os.path.relpath(file_path, train_dir)
                 if file_path not in excluded_samples:
@@ -123,22 +115,16 @@ def filtering_outliers(train_dir, excluded_file, filtered_train_dir):
                     shutil.copy(file_path, new_file_path)
 
 ## ===== ===== ===== ===== ===== ===== ===== =====
-## Face detect
+## Add sunglasses
 ## ===== ===== ===== ===== ===== ===== ===== =====
 
 def add_sunglasses(image):
     if random.random() < 0.20:
-        # 선글라스를 이미지에 덧붙이기 (이 예시에서는 간단한 위치와 크기로 조정)
         width, height = image.size
         glasses_width = int(width * 0.6)
         glasses_height = int(height * 0.6)
-
-        # 선글라스 크기 조정
         sunglasses_resized = sunglasses.resize((glasses_width, glasses_height))
-
-        # 선글라스를 이미지에 합성
         image.paste(sunglasses_resized, (int(width * 0.2), int(height * 0.14)), sunglasses_resized)
-
     return image
 
 ## ===== ===== ===== ===== ===== ===== ===== =====
@@ -221,7 +207,6 @@ def main_worker(args):
     if args.eval == True:
     
         sc, lab, trials = trainer.evaluateFromList(transform=test_transform, **vars(args))
-        
         EER, eer_threshold = compute_eer(lab, sc)
 
         print('EER {:.2f}%'.format(EER*100))
