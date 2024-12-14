@@ -1,8 +1,6 @@
-20190235 Gangtae Park
+# EE488 Final Project Report
 
-**EE488 Final Project Report**
-
-1. **Key Design Choices**
+## Key Design Choices
 
 **Scheduler**
 
@@ -20,7 +18,7 @@ Dataset of train1 includes Caucasian male, besides dataset of train2 includes Ko
 
 According to the paper [2], ArcFace loss is more fit to create the boundary between each class. So, I adopted ArcFace loss function instead of softmax or triplet loss. The recommended scaling factor was 64. Also, I used margin as 0.2 instead of recommended number 0.5 because I have more classes than the author had. After I trained with ArcFace loss function, I tried to combine softmax and ArcFace because softmax focus on labeling the data to which class it belongs to, but ArcFace focus on creating boundary. Therefore, I thought that it would make a synergy.
 
-2. **Ablation Study**
+## Ablation Study
 
 The results of ablation study are in [Table 2-1]
 
@@ -52,13 +50,13 @@ The hyperparameters of each model are in [Table 2-2]
 
 I tried to match the batch size as the power of 2. By the multiple times of experiment, early stopping the finetuning for train set 2 at about 15<sup>th</sup> epoch performs the best for validation dataset.
 
-3. **Conclusion**
+## Conclusion
 
 In this project, the model's performance improved from an initial accuracy of 86.45% and EER of 13.55% to a final accuracy of 92.43% and EER of 7.57%. Plus, the test set showed EER of 8.15%. Efforts were made to avoid focusing on superficial features such as skin color, hair, and facial hair, ensuring the model relied on more meaningful features. Although ResNet-18 was used, attempts to explore alternative models were limited by parameter constraints. Combining the two existing loss functions showed promise, but the lack of new loss function ideas remains a missed opportunity for further enhancement.
 
 In summary, the model's performance has improved significantly, but there are still opportunities for optimization, particularly in exploring novel loss functions and expanding the model architecture within available resources.
 
-4. **Reference**
+## Reference
 
 [1] I. Loshchilov and F. Hutter, “SGDR: Stochastic Gradient Descent with Warm Restarts”, 2017.
 
